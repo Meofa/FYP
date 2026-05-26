@@ -63,10 +63,8 @@ with st.sidebar:
     st.markdown('<div class="sidebar-subtitle">📥 GET STARTED</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-text">Download the template here</div>', unsafe_allow_html=True)
     
-    try:
-        with open("Wrong_Headers_Financial_Data_2026.xlsx", "rb") as file:
-            st.download_button(label="⬇️ Download Template", data=file, file_name="Financial_Template.xlsx")
-    except: st.info("Template file not found")
+    with open("Dummy.xlsx", "rb") as file:
+        st.download_button(label="⬇️ Download Template", data=file, file_name="Financial_Template.xlsx")
 
     st.markdown("---")
     startup_money = st.number_input("Enter Startup Capital (RM)", min_value=0.0, value=15000.0, step=500.0)
