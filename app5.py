@@ -2,211 +2,305 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ==========================================
+# ==============================================================================
 # 1. PAGE CONFIGURATION
-# ==========================================
-st.set_page_config(page_title="SmartHost Financial Dashboard", layout="wide")
+# ==============================================================================
+st.set_page_config(page_title="SmartHost Dashboard", layout="wide")
 
-# ==========================================
-# 2. CUSTOM CSS (Matching Interface Design)
-# ==========================================
+# ==============================================================================
+# 2. ROBOTO FONT, NAVY SIDEBAR & PASTEL KHAKI BACKGROUNDS CSS
+# ==============================================================================
 st.markdown("""
 <style>
-.block-container { padding-top: 1rem; padding-bottom: 0rem; }
-.kpi-container { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.kpi-card {
-    flex: 1; padding: 20px; border-radius: 5px; text-align: center;
-    color: black; font-weight: bold; border: 1px solid #000;
-}
-.net-profit { background-color: #2ecc71; }
-.expenses { background-color: #e74c3c; }
-.revenue { background-color: #3498db; }
-.margin { background-color: #f1c40f; }
-.cash { background-color: #9b59b6; }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Roboto', sans-serif;
+    }
+
+    /* Main body background matches the soft pastel theme */
+    .stApp { background-color: #faf6ee !important; }
+    
+    /* FIX: Increased padding so the top of the KPI cards isn't cut off */
+    .block-container { 
+        padding-top: 4rem !important; 
+        padding-bottom: 0rem !important; 
+        max-width: 98% !important; 
+    }
+
+    /* Sidebar Customization - Sleek Navy Blue */
+    section[data-testid="stSidebar"] {
+        background-color: #0a2240 !important;
+    }
+    
+    /* Ensuring sidebar labels, paragraphs, and standard headers are crisp white */
+    section[data-testid="stSidebar"] label, 
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3 {
+        color: #ffffff !important;
+    }
+
+    /* Prevent the download button text from turning white and becoming invisible */
+    section[data-testid="stSidebar"] button p {
+        color: #2d3436 !important;
+    }
+
+    /* UPDATE: Hardened the file uploader outline to solid black for a highly professional look */
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+        border: 4px solid #2d3436 !important; /* Thick solid black border line */
+        background-color: #ffffff !important;  /* Pure white background inside the dropzone */
+        border-radius: 15px !important;
+    }
+
+    /* Sidebar Title Customization */
+    .sidebar-title {
+        font-size: 2.2rem; 
+        font-weight: 900;
+        color: #ffffff;
+        text-transform: uppercase;
+        margin-top: 10px; 
+        margin-bottom: 15px;
+        border-bottom: 4px solid #ffffff;
+        padding-bottom: 8px;
+        letter-spacing: 1px;
+    }
+
+    /* KPI Cards: Preserved exactly as before */
+    .kpi-container { 
+        display: flex; 
+        justify-content: space-between; 
+        gap: 10px; 
+        margin-bottom: 15px; 
+        margin-top: -10px; 
+    }
+    .kpi-card {
+        flex: 1; 
+        padding: 15px 10px; 
+        min-height: 110px;   
+        border-radius: 20px; 
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: black; 
+        border: 4px solid #2d3436 !important; 
+        box-shadow: 8px 8px 0px rgba(0,0,0,0.2);
+    }
+    .kpi-label { 
+        font-size: 0.9rem; 
+        font-weight: 900; 
+        text-transform: uppercase; 
+        margin-bottom: 4px; 
+    }
+    .kpi-value { 
+        font-size: 1.6rem; 
+        font-weight: 900; 
+    }
+
+    .net-profit { background-color: #2ecc71; }
+    .expenses { background-color: #e74c3c; }
+    .revenue { background-color: #3498db; }
+    .margin { background-color: #f1c40f; }
+    .cash { background-color: #9b59b6; }
+
+    /* Outer box container border thickness set to 5px for a bolder look */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #f4ebd9 !important;
+        border-radius: 30px !important;
+        border: 5px solid #2d3436 !important; 
+        box-shadow: 10px 10px 0px rgba(0,0,0,0.15) !important;
+        margin-bottom: 10px !important;
+        padding: 15px !important; 
+    }
+
+    /* Inject a dynamic 3D drop-shadow layer directly onto vector charts */
+    .main svg.main-svg {
+        filter: drop-shadow(4px 6px 4px rgba(0, 0, 0, 0.08));
+    }
+
+    h3, .stSubheader { 
+        font-size: 1.1rem !important; 
+        font-weight: 900 !important; 
+        text-transform: uppercase; 
+        color: #2d3436 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center;'>Dashboard</h1>", unsafe_allow_html=True)
-
-# ==========================================
-# 3. SIDEBAR (Data Control + Configuration)
-# ==========================================
+# ==============================================================================
+# 3. SIDEBAR CONTROLS & DATA LOADING PIPELINE 
+# ==============================================================================
 with st.sidebar:
-    st.header("Data Control")
+    st.markdown('<div class="sidebar-title">Dashboard</div>', unsafe_allow_html=True)
+    st.header("⚙️ DATA CONTROL")
     
-    # TEMPLATE DOWNLOAD
     st.markdown("### 📥 Get Started")
-    st.markdown("New here? Download the template, fill in your data, and upload it below 🚀")
+    st.markdown("New here? Download the template, fill in your data, and upload it below")
 
-    with open("Dummy.xlsx", "rb") as file:
-        st.download_button(
-            label="⬇️ Download Template",
-            data=file,
-            file_name="Financial_Template.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    try:
+        with open("Wrong_Headers_Financial_Data_2026.xlsx", "rb") as file:
+            st.download_button(
+                label="⬇️ Download Template",
+                data=file,
+                file_name="Financial_Template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+    except FileNotFoundError:
+        st.download_button(label="⬇️ Download Template", data="", file_name="Financial_Template.xlsx")
+        
+    startup_money = st.number_input("Enter Startup Capital (RM)", min_value=0.0, value=15000.0, step=500.0)
+    uploaded_file = st.file_uploader("📤 UPLOAD TEMPLATE", type=["csv", "xlsx"])
 
-    st.markdown("---")
-    
-    # User Input for Startup Capital
-    st.subheader("💰 Financial Configuration")
-    startup_money = st.number_input(
-        "Enter Startup Capital (RM)", 
-        min_value=0.0, 
-        value=15000.0, 
-        step=500.0,
-        help="Initial money invested before transactions began."
-    )
-    
-    st.markdown("---")
-
-    # File Uploader
-    uploaded_file = st.file_uploader(
-        "📤 Upload your completed template",
-        type=["csv", "xlsx"]
-    )
-
-# Default Values for KPI Cards
+# Initialize default empty structures
 metrics = {"net": 0, "exp": 0, "rev": 0, "margin": 0, "cash": startup_money}
-df = None
 df_view = None
+valid_file_pipeline = False
 
-# ==========================================
-# 4. PROCESSING ENGINE
-# ==========================================
+# Core Data Integrity Validation & ETL Pipeline
 if uploaded_file:
     try:
-        # Load the file
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-
-        # Standardize column names
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df.columns = df.columns.str.strip().str.lower()
-
-        # Validate required columns
-        required_columns = ['date', 'sales', 'target_sales', 'rent', 'utilities', 'supplies', 'payroll']
-        missing_cols = [col for col in required_columns if col not in df.columns]
-
-        if missing_cols:
-            st.error(f"❌ Invalid Template! Missing columns: {missing_cols}")
-            st.stop()
-
-        # Convert Date Column (Handles Excel serial dates and dd/mm/yyyy)
-        if pd.api.types.is_numeric_dtype(df['date']):
-            df['date'] = pd.to_datetime(df['date'], origin='1899-12-30', unit='D')
+        
+        required_template_headers = ['date', 'sales', 'target_sales', 'rent', 'utilities', 'supplies', 'payroll']
+        has_correct_structure = all(header in df.columns for header in required_template_headers)
+        
+        if not has_correct_structure:
+            st.sidebar.warning("⚠️ Please using the template")
         else:
-            df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce')
+            valid_file_pipeline = True
+            
+            # REMOVED: st.balloons() and session_state check dropped to preserve institutional professionalism
+            
+            df = df.drop_duplicates()
+            
+            if 'date' in df.columns:
+                if df['date'].dtype == 'object':
+                    df['date'] = df['date'].astype(str).str.strip()
+                    
+                if pd.api.types.is_numeric_dtype(df['date']):
+                    df['date'] = pd.to_datetime(df['date'], origin='1899-12-30', unit='D')
+                else:
+                    df['date'] = pd.to_datetime(df['date'], dayfirst=True, errors='coerce')
+                
+                df = df.dropna(subset=['date']).sort_values(by='date')
+            
+            for col in ['sales', 'target_sales', 'rent', 'utilities', 'supplies', 'payroll']:
+                if col in df.columns:
+                    if df[col].dtype == 'object':
+                        df[col] = df[col].astype(str).str.replace(r'[^0-9.]', '', regex=True)
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-        # Drop invalid dates and sort
-        df = df.dropna(subset=['date']).sort_values(by='date')
+            with st.sidebar:
+                st.markdown("---")
+                dr = st.slider(
+                    "DATE RANGE", 
+                    df['date'].min().to_pydatetime(), 
+                    df['date'].max().to_pydatetime(), 
+                    (df['date'].min().to_pydatetime(), df['date'].max().to_pydatetime())
+                )
+            
+            df_view = df[(df['date'] >= dr[0]) & (df['date'] <= dr[1])]
+            df_cum = df[df['date'] <= dr[1]]
 
-        # Clean Numeric Columns
-        num_cols = ['sales', 'target_sales', 'rent', 'utilities', 'supplies', 'payroll']
-        for col in num_cols:
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            rev = df_view['sales'].sum()
+            total_exp = df_view[['rent', 'utilities', 'supplies', 'payroll']].sum().sum()
+            net = rev - total_exp
+            cash = startup_money + (df_cum['sales'].sum() - df_cum[['rent', 'utilities', 'supplies', 'payroll']].sum().sum())
 
-        # 📅 DATE RANGE SLIDER
-        min_date, max_date = df['date'].min(), df['date'].max()
-        with st.sidebar:
-            st.subheader("📅 Filter by Date")
-            date_range = st.slider(
-                "Select Date Range",
-                min_value=min_date.to_pydatetime(),
-                max_value=max_date.to_pydatetime(),
-                value=(min_date.to_pydatetime(), max_date.to_pydatetime())
-            )
-
-        start_date, end_date = date_range
-
-        # ---------------------------------------------------------
-        # CUMULATIVE LOGIC CALCULATION
-        # ---------------------------------------------------------
-        # 1. df_view: Only the data inside the selected range (for Bar/Pie charts)
-        df_view = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
-        
-        # 2. df_until_now: All data from the beginning up to the end of the range
-        # This is the "Logical" way to calculate Cash Position
-        df_until_now = df[df['date'] <= end_date]
-
-        # Calculate KPIs for the selected view
-        rev_val = df_view['sales'].sum()
-        total_exp = df_view[['rent', 'utilities', 'supplies', 'payroll']].sum().sum()
-        net_val = rev_val - total_exp
-        margin_val = (net_val / rev_val * 100) if rev_val > 0 else 0
-        
-        # Cash Position = Startup Money + All profit made up to the end of selected range
-        cum_profit = df_until_now['sales'].sum() - df_until_now[['rent', 'utilities', 'supplies', 'payroll']].sum().sum()
-        cash_position = startup_money + cum_profit
-
-        metrics = {
-            "net": net_val,
-            "exp": total_exp,
-            "rev": rev_val,
-            "margin": margin_val,
-            "cash": cash_position
-        }
-
-        st.success("✅ Analysis Updated!")
-
+            metrics = {
+                "net": net, 
+                "exp": total_exp, 
+                "rev": rev, 
+                "margin": (net / rev * 100) if rev > 0 else 0, 
+                "cash": cash
+            }
     except Exception as e:
-        st.error(f"Unexpected error: {e}")
+        st.error(f"System Error: {e}")
 
-# ==========================================
-# 5. KPI DISPLAY (TOP 5 VIEW)
-# ==========================================
-kpi_html = f"""
+# ==============================================================================
+# 4. MAIN USER INTERFACE RENDERING
+# ==============================================================================
+
+# Section 4.1: Top Row Strategic KPI Ribbon
+st.markdown(f"""
 <div class="kpi-container">
-    <div class="kpi-card net-profit">Net Profit<br>RM {metrics['net']:,.0f}</div>
-    <div class="kpi-card expenses">Expenses<br>RM {metrics['exp']:,.0f}</div>
-    <div class="kpi-card revenue">Revenue<br>RM {metrics['rev']:,.0f}</div>
-    <div class="kpi-card margin">Margin<br>{metrics['margin']:.1f}%</div>
-    <div class="kpi-card cash">Cash Position<br>RM {metrics['cash']:,.0f}</div>
+    <div class="kpi-card net-profit"><div class="kpi-label">NET PROFIT</div><div class="kpi-value">RM {metrics['net']:,.0f}</div></div>
+    <div class="kpi-card expenses"><div class="kpi-label">EXPENSES</div><div class="kpi-value">RM {metrics['exp']:,.0f}</div></div>
+    <div class="kpi-card revenue"><div class="kpi-label">REVENUE</div><div class="kpi-value">RM {metrics['rev']:,.0f}</div></div>
+    <div class="kpi-card margin"><div class="kpi-label">MARGIN</div><div class="kpi-value">{metrics['margin']:.1f}%</div></div>
+    <div class="kpi-card cash"><div class="kpi-label">CASH POSITION</div><div class="kpi-value">RM {metrics['cash']:,.0f}</div></div>
 </div>
-"""
-st.markdown(kpi_html, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# ==========================================
-# 6. VISUALIZATION WORKSPACE
-# ==========================================
-if df_view is not None and not df_view.empty:
-    st.markdown("<h3>Revenue Trends</h3>", unsafe_allow_html=True)
-    fig_line = px.line(
-        df_view, x='date', y='sales', 
-        markers=True, template="plotly_white", height=300
-    )
-    fig_line.update_layout(margin=dict(l=0, r=0, t=10, b=0))
-    st.plotly_chart(fig_line, use_container_width=True)
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        st.markdown("<h3>Actual vs Target</h3>", unsafe_allow_html=True)
-        # Applying the Dark Green (#006400) and Light Green (#90EE90)
-        fig_bar = px.bar(
-            df_view, x='date', y=['sales', 'target_sales'], 
-            barmode='group', height=250,
-            color_discrete_map={'sales': '#006400', 'target_sales': '#90EE90'}
+# Section 4.2: Visual Workspace Row 1 (Revenue Trends)
+st.subheader("📈 REVENUE TRENDS")
+with st.container(border=True):
+    if valid_file_pipeline and df_view is not None and not df_view.empty:
+        fig_line = px.line(df_view, x='date', y='sales', markers=True, template="plotly_white", height=240)
+        fig_line.update_traces(line_color='#6c5ce7', line_width=4)
+        fig_line.update_layout(
+            font=dict(family="Roboto", size=14), 
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#ffffff'
         )
-        fig_bar.update_layout(margin=dict(l=0, r=0, t=10, b=0), legend_title_text='Legend')
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.plotly_chart(fig_line, use_container_width=True)
+    else:
+        st.markdown('<div style="text-align:center; padding:50px; color:#888; font-weight:900;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
 
-    with col_right:
-        st.markdown("<h3>Expense Distribution</h3>", unsafe_allow_html=True)
-        exp_summary = {
-            'Rent': df_view['rent'].sum(),
-            'Utilities': df_view['utilities'].sum(),
-            'Supplies': df_view['supplies'].sum(),
-            'Payroll': df_view['payroll'].sum()
-        }
-        fig_pie = px.pie(
-            values=list(exp_summary.values()), 
-            names=list(exp_summary.keys()), 
-            height=250,
-            color_discrete_sequence=px.colors.qualitative.Pastel
-        )
-        fig_pie.update_layout(margin=dict(l=0, r=0, t=10, b=0))
-        st.plotly_chart(fig_pie, use_container_width=True)
-else:
-    st.info("System Initialized. Please upload your template in the sidebar to begin.")
+# Section 4.3: Visual Workspace Row 2 (Comparative Analytics & Expense Distribution)
+col_left, col_right = st.columns(2)
+
+with col_left:
+    st.subheader("🎯 ACTUAL VS TARGET")
+    with st.container(border=True):
+        if valid_file_pipeline and df_view is not None and not df_view.empty:
+            fig_bar = px.bar(
+                df_view, x='date', y=['sales', 'target_sales'], barmode='group', height=240,
+                template="plotly_white", 
+                color_discrete_map={'sales': '#1b5e20', 'target_sales': '#a5d6a7'}
+            )
+            fig_bar.update_layout(
+                font=dict(family="Roboto", size=14), 
+                legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor='#ffffff',
+                plot_bgcolor='#ffffff'
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.markdown('<div style="text-align:center; padding:50px; color:#888;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
+
+with col_right:
+    st.subheader("💸 EXPENSE DISTRIBUTION")
+    with st.container(border=True):
+        if valid_file_pipeline and df_view is not None and not df_view.empty:
+            exp_sum = {
+                'Rent': df_view['rent'].sum(), 
+                'Utilities': df_view['utilities'].sum(),
+                'Supplies': df_view['supplies'].sum(), 
+                'Payroll': df_view['payroll'].sum()
+            }
+            fig_pie = px.pie(
+                values=list(exp_sum.values()), names=list(exp_sum.keys()), hole=0, height=240,
+                template="plotly_white", 
+                color_discrete_sequence=['#6c5ce7', '#ff7675', '#fdcb6e', '#0984e3']
+            )
+            
+            fig_pie.update_traces(
+                textinfo='percent',
+                insidetextfont=dict(family="Roboto", size=14, color='#000000'),
+                marker=dict(line=dict(color='#ffffff', width=3))
+            )
+            
+            fig_pie.update_layout(
+                font=dict(family="Roboto", size=14), 
+                legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor='#ffffff'
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.markdown('<div style="text-align:center; padding:50px; color:#888;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
