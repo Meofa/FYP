@@ -156,36 +156,20 @@ else:
     fig = go.Figure()
     
     # Add markers
-    fig.add_trace(go.Scatter(
-        x=df_view['date'], 
-        y=df_view['sales'], 
-        mode='markers', 
-        name='Sales', 
-        marker=dict(color='#2d3436', size=8),
-        showlegend=False # Membuang legend untuk marker
-    ))
+    fig.add_trace(go.Scatter(x=df_view['date'], y=df_view['sales'], mode='markers', name='Sales', 
+                             marker=dict(color='#2d3436', size=8), showlegend=False))
     
-    # Add colored segments (Green for up, Red for down)
+    # Add colored segments
     for i in range(len(df_view) - 1):
         color = '#00ff00' if df_view['sales'].iloc[i+1] >= df_view['sales'].iloc[i] else '#ff0000'
         fig.add_trace(go.Scatter(
             x=[df_view['date'].iloc[i], df_view['date'].iloc[i+1]],
             y=[df_view['sales'].iloc[i], df_view['sales'].iloc[i+1]],
-            mode='lines',
-            line=dict(color=color, width=3),
-            showlegend=False # Memastikan tiada legend untuk setiap segmen
+            mode='lines', line=dict(color=color, width=3), showlegend=False
         ))
     
-    fig.update_layout(
-        height=250, 
-        margin=dict(l=20, r=20, t=20, b=20), 
-        paper_bgcolor='rgba(0,0,0,0)', 
-        plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(showgrid=False),
-        yaxis=dict(showgrid=True, gridcolor='#ecf0f1'),
-        showlegend=False # Memastikan keseluruhan carta tiada legend
-    )
-    
+    fig.update_layout(height=250, margin=dict(l=20, r=20, t=20, b=20), paper_bgcolor='rgba(0,0,0,0)', 
+                      plot_bgcolor='rgba(0,0,0,0)', xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='#ecf0f1'))
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
     col1, col2 = st.columns(2)
