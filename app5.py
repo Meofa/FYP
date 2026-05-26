@@ -3,28 +3,27 @@ import pandas as pd
 import plotly.express as px
 
 # ==============================================================================
-# 1. PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION & INSTITUTIONAL CORES
 # ==============================================================================
 st.set_page_config(page_title="SmartHost Dashboard", layout="wide")
 
 # ==============================================================================
-# 2. ROBOTO FONT, NAVY SIDEBAR & PASTEL KHAKI BACKGROUNDS CSS
+# 2. UNIVERSAL PRODUCTION-SAFE STYLING CSS
 # ==============================================================================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&display=swap');
 
-    html, body, [class*="css"]  {
+    /* Target all possible body containers to ensure background color uniformity on the cloud */
+    html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"] {
         font-family: 'Roboto', sans-serif;
+        background-color: #faf6ee !important; 
     }
-
-    /* Main body background matches the soft pastel theme */
-    .stApp { background-color: #faf6ee !important; }
     
-    /* FIX: Increased padding so the top of the KPI cards isn't cut off */
+    /* FIX: Standardized top spacing to guarantee layout synchronization across cloud viewports */
     .block-container { 
-        padding-top: 4rem !important; 
-        padding-bottom: 0rem !important; 
+        padding-top: 3.5rem !important; 
+        padding-bottom: 2rem !important; 
         max-width: 98% !important; 
     }
 
@@ -46,10 +45,10 @@ st.markdown("""
         color: #2d3436 !important;
     }
 
-    /* UPDATE: Hardened the file uploader outline to solid black for a highly professional look */
+    /* Hardened the file uploader outline to solid black for a highly professional look */
     section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
-        border: 4px solid #2d3436 !important; /* Thick solid black border line */
-        background-color: #ffffff !important;  /* Pure white background inside the dropzone */
+        border: 4px solid #2d3436 !important; 
+        background-color: #ffffff !important;  
         border-radius: 15px !important;
     }
 
@@ -66,13 +65,12 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* KPI Cards: Preserved exactly as before */
+    /* KPI Cards Layout Setup */
     .kpi-container { 
         display: flex; 
         justify-content: space-between; 
         gap: 10px; 
-        margin-bottom: 15px; 
-        margin-top: -10px; 
+        margin-bottom: 20px; 
     }
     .kpi-card {
         flex: 1; 
@@ -104,17 +102,17 @@ st.markdown("""
     .margin { background-color: #f1c40f; }
     .cash { background-color: #9b59b6; }
 
-    /* Outer box container border thickness set to 5px for a bolder look */
-    [data-testid="stVerticalBlockBorderWrapper"] {
+    /* PRODUCTION FIX: Stable, cloud-proof CSS selector for chart containers */
+    div.element-container:has(iframe), .stPlotlyChart {
         background-color: #f4ebd9 !important;
         border-radius: 30px !important;
         border: 5px solid #2d3436 !important; 
         box-shadow: 10px 10px 0px rgba(0,0,0,0.15) !important;
-        margin-bottom: 10px !important;
-        padding: 15px !important; 
+        padding: 12px !important;
+        display: block;
     }
 
-    /* Inject a dynamic 3D drop-shadow layer directly onto vector charts */
+    /* Drop-shadow rendering layer for SVG assets */
     .main svg.main-svg {
         filter: drop-shadow(4px 6px 4px rgba(0, 0, 0, 0.08));
     }
@@ -124,6 +122,8 @@ st.markdown("""
         font-weight: 900 !important; 
         text-transform: uppercase; 
         color: #2d3436 !important;
+        margin-top: 10px !important;
+        margin-bottom: 5px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -170,9 +170,6 @@ if uploaded_file:
             st.sidebar.warning("⚠️ Please using the template")
         else:
             valid_file_pipeline = True
-            
-            # REMOVED: st.balloons() and session_state check dropped to preserve institutional professionalism
-            
             df = df.drop_duplicates()
             
             if 'date' in df.columns:
@@ -223,7 +220,7 @@ if uploaded_file:
 # 4. MAIN USER INTERFACE RENDERING
 # ==============================================================================
 
-# Section 4.1: Top Row Strategic KPI Ribbon
+# Section 4.1: Strategic KPI Ribbon
 st.markdown(f"""
 <div class="kpi-container">
     <div class="kpi-card net-profit"><div class="kpi-label">NET PROFIT</div><div class="kpi-value">RM {metrics['net']:,.0f}</div></div>
@@ -234,73 +231,68 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Section 4.2: Visual Workspace Row 1 (Revenue Trends)
+# Section 4.2: Row 1 (Revenue Trends)
 st.subheader("📈 REVENUE TRENDS")
-with st.container(border=True):
-    if valid_file_pipeline and df_view is not None and not df_view.empty:
-        fig_line = px.line(df_view, x='date', y='sales', markers=True, template="plotly_white", height=240)
-        fig_line.update_traces(line_color='#6c5ce7', line_width=4)
-        fig_line.update_layout(
-            font=dict(family="Roboto", size=14), 
-            margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor='#ffffff',
-            plot_bgcolor='#ffffff'
-        )
-        st.plotly_chart(fig_line, use_container_width=True)
-    else:
-        st.markdown('<div style="text-align:center; padding:50px; color:#888; font-weight:900;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
+if valid_file_pipeline and df_view is not None and not df_view.empty:
+    fig_line = px.line(df_view, x='date', y='sales', markers=True, template="plotly_white", height=230)
+    fig_line.update_traces(line_color='#6c5ce7', line_width=4)
+    fig_line.update_layout(
+        font=dict(family="Roboto", size=14), 
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor='#ffffff',
+        plot_bgcolor='#ffffff'
+    )
+    st.plotly_chart(fig_line, use_container_width=True)
+else:
+    st.markdown('<div style="text-align:center; background-color: #f4ebd9; border: 5px solid #2d3436; border-radius: 30px; padding:50px; color:#888; font-weight:900;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
 
-# Section 4.3: Visual Workspace Row 2 (Comparative Analytics & Expense Distribution)
+# Section 4.3: Row 2 (Comparative Analytics & Expense Distribution)
 col_left, col_right = st.columns(2)
 
 with col_left:
     st.subheader("🎯 ACTUAL VS TARGET")
-    with st.container(border=True):
-        if valid_file_pipeline and df_view is not None and not df_view.empty:
-            fig_bar = px.bar(
-                df_view, x='date', y=['sales', 'target_sales'], barmode='group', height=240,
-                template="plotly_white", 
-                color_discrete_map={'sales': '#1b5e20', 'target_sales': '#a5d6a7'}
-            )
-            fig_bar.update_layout(
-                font=dict(family="Roboto", size=14), 
-                legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
-                margin=dict(l=10, r=10, t=10, b=10),
-                paper_bgcolor='#ffffff',
-                plot_bgcolor='#ffffff'
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
-        else:
-            st.markdown('<div style="text-align:center; padding:50px; color:#888;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
+    if valid_file_pipeline and df_view is not None and not df_view.empty:
+        fig_bar = px.bar(
+            df_view, x='date', y=['sales', 'target_sales'], barmode='group', height=230,
+            template="plotly_white", 
+            color_discrete_map={'sales': '#1b5e20', 'target_sales': '#a5d6a7'}
+        )
+        fig_bar.update_layout(
+            font=dict(family="Roboto", size=14), 
+            legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor='#ffffff',
+            plot_bgcolor='#ffffff'
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        st.markdown('<div style="text-align:center; background-color: #f4ebd9; border: 5px solid #2d3436; border-radius: 30px; padding:50px; color:#888; font-weight:900;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
 
 with col_right:
     st.subheader("💸 EXPENSE DISTRIBUTION")
-    with st.container(border=True):
-        if valid_file_pipeline and df_view is not None and not df_view.empty:
-            exp_sum = {
-                'Rent': df_view['rent'].sum(), 
-                'Utilities': df_view['utilities'].sum(),
-                'Supplies': df_view['supplies'].sum(), 
-                'Payroll': df_view['payroll'].sum()
+    if valid_file_pipeline and df_view is not None and not df_view.empty:
+        exp_sum = {
+            'Rent': df_view['rent'].sum(), 
+            'Utilities': df_view['utilities'].sum(),
+            'Supplies': df_view['supplies'].sum(), 
+            'Payroll': df_view['payroll'].sum()
             }
-            fig_pie = px.pie(
-                values=list(exp_sum.values()), names=list(exp_sum.keys()), hole=0, height=240,
-                template="plotly_white", 
-                color_discrete_sequence=['#6c5ce7', '#ff7675', '#fdcb6e', '#0984e3']
-            )
-            
-            fig_pie.update_traces(
-                textinfo='percent',
-                insidetextfont=dict(family="Roboto", size=14, color='#000000'),
-                marker=dict(line=dict(color='#ffffff', width=3))
-            )
-            
-            fig_pie.update_layout(
-                font=dict(family="Roboto", size=14), 
-                legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
-                margin=dict(l=10, r=10, t=10, b=10),
-                paper_bgcolor='#ffffff'
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.markdown('<div style="text-align:center; padding:50px; color:#888;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
+        fig_pie = px.pie(
+            values=list(exp_sum.values()), names=list(exp_sum.keys()), hole=0, height=230,
+            template="plotly_white", 
+            color_discrete_sequence=['#6c5ce7', '#ff7675', '#fdcb6e', '#0984e3']
+        )
+        fig_pie.update_traces(
+            textinfo='percent',
+            insidetextfont=dict(family="Roboto", size=14, color='#000000'),
+            marker=dict(line=dict(color='#ffffff', width=3))
+        )
+        fig_pie.update_layout(
+            font=dict(family="Roboto", size=14), 
+            legend=dict(orientation="h", y=-0.2, font=dict(size=16)), 
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor='#ffffff'
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+    else:
+        st.markdown('<div style="text-align:center; background-color: #f4ebd9; border: 5px solid #2d3436; border-radius: 30px; padding:50px; color:#888; font-weight:900;">WAITING FOR VALID TEMPLATE...</div>', unsafe_allow_html=True)
